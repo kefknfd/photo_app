@@ -284,4 +284,4 @@ with gr.Blocks(title="自然人像與藝術修圖工作站", css=CUSTOM_CSS) as 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
-    interface.launch(server_name="0.0.0.0", server_port=port, theme=gr.themes.Soft(), allowed_paths=[str(OUTPUT_DIR)])
+    interface.launch(server_name="0.0.0.0", server_port=port, theme=gr.themes.Soft())
