@@ -638,6 +638,13 @@ def process_full_studio(
 ):
     if input_img is None:
         return None
+    # 🌟 雲端極速優化：將超大手機相片等比例縮放至最高 1600px，大幅提升運算速度
+    max_dimension = 1600
+    w_orig, h_orig = input_img.size
+    if max(w_orig, h_orig) > max_dimension:
+        scale = max_dimension / max(w_orig, h_orig)
+        new_w, new_h = int(w_orig * scale), int(h_orig * scale)
+        input_img = input_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
     img_bgr = cv2.cvtColor(np.array(input_img.convert("RGB")), cv2.COLOR_RGB2BGR)
 
