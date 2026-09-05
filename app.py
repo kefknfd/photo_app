@@ -5,6 +5,14 @@ import time
 import zipfile
 from pathlib import Path
 
+# 防止 Windows 終端輸出亂碼
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 BASE_DIR = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -13,9 +21,30 @@ os.environ["U2NET_HOME"] = str(BASE_DIR)
 import gradio as gr
 import cv2
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 
 SESSION = None
+
+# --- 檔案路徑提取輔助函數 (相容 Gradio 6 FileData / Dict / Str / File) ---
+
+def get_file_path(file_obj):
+    if hasattr(file_obj, "path") and file_obj.path:
+        return file_obj.path
+    if hasattr(file_obj, "name") and file_obj.name:
+        return file_obj.name
+    if isinstance(file_obj, dict):
+        return file_obj.get("path") or file_obj.get("name")
+    return str(file_obj)
+
+def get_file_name(file_obj, file_path=""):
+    if hasattr(file_obj, "orig_name") and file_obj.orig_name:
+        return file_obj.orig_name
+    if isinstance(file_obj, dict) and file_obj.get("orig_name"):
+        return file_obj.get("orig_name")
+    if file_path:
+        return Path(file_path).name
+    p = get_file_path(file_obj)
+    return Path(p).name if p else "image.jpg"
 
 # --- 智慧去背處理模組 ---
 
@@ -27,11 +56,25 @@ def find_u2net_model():
     ]
     for d in search_dirs:
         target = d / "u2net.onnx"
-        if target.is_file():
+        if target.is_file() and target.stat().st_size > 10_000_000:
             return str(target)
         target_sub = d / ".u2net" / "u2net.onnx"
-        if target_sub.is_file():
+        if target_sub.is_file() and target_sub.stat().st_size > 10_000_000:
             return str(target_sub)
+
+    # 雲端部署環境 (如 Render) 若無完整模型，自動從官方 Release 下載
+    download_target = BASE_DIR / "u2net.onnx"
+    try:
+        import urllib.request
+        print("未檢測到完整的 U2-Net 權重，正在從官方 Release 自動下載中...")
+        url = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx"
+        urllib.request.urlretrieve(url, str(download_target))
+        if download_target.is_file() and download_target.stat().st_size > 10_000_000:
+            print("U2-Net 模型下載完成！")
+            return str(download_target)
+    except Exception as e:
+        print(f"自動下載 U2-Net 模型失敗: {e}")
+
     return None
 
 def get_rembg_session():
@@ -41,6 +84,7 @@ def get_rembg_session():
 
     model_path = find_u2net_model()
     if not model_path:
+        print("未找到 U2-Net 權重檔案 (u2net.onnx)，智慧去背將略過。")
         SESSION = False
         return False
 
@@ -50,11 +94,12 @@ def get_rembg_session():
         sess_opts.intra_op_num_threads = 2
         SESSION = ort.InferenceSession(model_path, sess_opts, providers=['CPUExecutionProvider'])
         return SESSION
-    except Exception:
+    except Exception as e:
+        print(f"初始化 U2-Net 模型失敗: {e}")
         SESSION = False
         return False
 
-def apply_background_matting(processed_pil, orig_pil, bg_mode, feather_val):
+def apply_background_matting(processed_pil, base_pil, bg_mode, feather_val):
     if bg_mode == "保留原圖背景":
         return processed_pil
 
@@ -63,7 +108,8 @@ def apply_background_matting(processed_pil, orig_pil, bg_mode, feather_val):
         return processed_pil
 
     try:
-        img_rgb = np.array(orig_pil.convert("RGB"))
+        # base_pil 已與旋轉、鏡像翻轉同步
+        img_rgb = np.array(base_pil.convert("RGB"))
         h_orig, w_orig = img_rgb.shape[:2]
         
         resized = cv2.resize(img_rgb, (320, 320)).astype(np.float32) / 255.0
@@ -80,42 +126,49 @@ def apply_background_matting(processed_pil, orig_pil, bg_mode, feather_val):
         raw_mask = (raw_mask - raw_mask.min()) / (raw_mask.max() - raw_mask.min() + 1e-8)
 
         mask_full = cv2.resize(raw_mask, (w_orig, h_orig), interpolation=cv2.INTER_CUBIC)
-        thresh_val = np.clip(0.3 + (1.0 - feather_val) * 0.4, 0.1, 0.9)
         
-        alpha = np.zeros_like(mask_full, dtype=np.float32)
-        alpha[mask_full >= thresh_val] = 1.0
-        alpha = cv2.GaussianBlur(alpha, (3, 3), 0)
+        # 柔和抗鋸齒去背遮罩 (髮絲級平滑過渡)
+        thresh_val = np.clip(0.3 + (1.0 - feather_val) * 0.4, 0.1, 0.9)
+        delta = 0.05 + 0.15 * feather_val
+        alpha = np.clip((mask_full - (thresh_val - delta)) / (2.0 * delta), 0.0, 1.0)
+        ksize = int(round(feather_val * 4)) * 2 + 1
+        if ksize > 1:
+            alpha = cv2.GaussianBlur(alpha, (ksize, ksize), 0)
         alpha_3d = alpha[:, :, np.newaxis]
-    except Exception:
+
+        proc_rgb = np.array(processed_pil.convert("RGB"))
+        if proc_rgb.shape[:2] != (h_orig, w_orig):
+            proc_rgb = cv2.resize(proc_rgb, (w_orig, h_orig), interpolation=cv2.INTER_LINEAR)
+
+        if bg_mode == "✂️ 透明背景 (PNG)":
+            proc_rgba = np.dstack([proc_rgb, (alpha * 255).astype(np.uint8)])
+            return Image.fromarray(proc_rgba, "RGBA")
+
+        bg_colors = {
+            "⚪ 純白證件照背景": np.array([255, 255, 255], dtype=np.uint8),
+            "🔵 商務證件藍背景": np.array([67, 142, 219], dtype=np.uint8),
+            "🔴 喜慶證件紅背景": np.array([218, 41, 28], dtype=np.uint8),
+            "🔘 質感冷灰背景": np.array([220, 222, 225], dtype=np.uint8),
+            "🍵 莫蘭迪綠背景": np.array([178, 190, 181], dtype=np.uint8)
+        }
+
+        if bg_mode in bg_colors:
+            bg_rgb = np.full_like(proc_rgb, bg_colors[bg_mode])
+            composed = (proc_rgb * alpha_3d + bg_rgb * (1.0 - alpha_3d)).astype(np.uint8)
+            return Image.fromarray(composed, "RGB")
+        elif bg_mode == "🖤 背景黑白 (人物全彩聚焦)":
+            gray_bg = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+            gray_bg_rgb = cv2.cvtColor(gray_bg, cv2.COLOR_GRAY2RGB)
+            composed = (proc_rgb * alpha_3d + gray_bg_rgb * (1.0 - alpha_3d)).astype(np.uint8)
+            return Image.fromarray(composed, "RGB")
+        elif bg_mode == "📸 背景大光圈深層虛化 (Bokeh)":
+            blurred_bg = cv2.GaussianBlur(img_rgb, (51, 51), 0)
+            composed = (proc_rgb * alpha_3d + blurred_bg * (1.0 - alpha_3d)).astype(np.uint8)
+            return Image.fromarray(composed, "RGB")
+
+    except Exception as e:
+        print(f"背景處理異常: {e}")
         return processed_pil
-
-    proc_rgb = np.array(processed_pil.convert("RGB"))
-
-    if bg_mode == "✂️ 透明背景 (PNG)":
-        proc_rgba = np.dstack([proc_rgb, (alpha * 255).astype(np.uint8)])
-        return Image.fromarray(proc_rgba, "RGBA")
-
-    bg_colors = {
-        "⚪ 純白證件照背景": np.array([255, 255, 255], dtype=np.uint8),
-        "🔵 商務證件藍背景": np.array([67, 142, 219], dtype=np.uint8),
-        "🔴 喜慶證件紅背景": np.array([218, 41, 28], dtype=np.uint8),
-        "🔘 質感冷灰背景": np.array([220, 222, 225], dtype=np.uint8),
-        "🍵 莫蘭迪綠背景": np.array([178, 190, 181], dtype=np.uint8)
-    }
-
-    if bg_mode in bg_colors:
-        bg_rgb = np.full_like(proc_rgb, bg_colors[bg_mode])
-        composed = (proc_rgb * alpha_3d + bg_rgb * (1.0 - alpha_3d)).astype(np.uint8)
-        return Image.fromarray(composed, "RGB")
-    elif bg_mode == "🖤 背景黑白 (人物全彩聚焦)":
-        gray_bg = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
-        gray_bg_rgb = cv2.cvtColor(gray_bg, cv2.COLOR_GRAY2RGB)
-        composed = (proc_rgb * alpha_3d + gray_bg_rgb * (1.0 - alpha_3d)).astype(np.uint8)
-        return Image.fromarray(composed, "RGB")
-    elif bg_mode == "📸 背景大光圈深層虛化 (Bokeh)":
-        blurred_bg = cv2.GaussianBlur(img_rgb, (51, 51), 0)
-        composed = (proc_rgb * alpha_3d + blurred_bg * (1.0 - alpha_3d)).astype(np.uint8)
-        return Image.fromarray(composed, "RGB")
 
     return processed_pil
 
@@ -485,7 +538,8 @@ def render_art_style(img_bgr, style_name, blend_ratio, line_strength, cel_shadin
     elif style_name == "👾 復古像素藝術 (Pixel Art)":
         h, w = img_bgr.shape[:2]
         pixel_size = max(int(min(h, w) / 90), 4)
-        temp = cv2.resize(img_bgr, (w // pixel_size, h // pixel_size), interpolation=cv2.INTER_LINEAR)
+        new_w, new_h = max(1, w // pixel_size), max(1, h // pixel_size)
+        temp = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
         art_bgr = cv2.resize(temp, (w, h), interpolation=cv2.INTER_NEAREST)
 
     return cv2.addWeighted(art_bgr, blend_ratio, img_bgr, 1.0 - blend_ratio, 0)
@@ -531,7 +585,9 @@ def apply_bokeh_blur(img_bgr, strength):
     kernel_x = cv2.getGaussianKernel(cols, cols / 2.0)
     kernel_y = cv2.getGaussianKernel(rows, rows / 2.0)
     mask = (kernel_y * kernel_x.T)
-    mask = mask / mask.max()
+    mask_max = mask.max()
+    if mask_max > 0:
+        mask = mask / mask_max
     mask = np.clip(mask * (1.0 + (1.0 - strength)), 0, 1)[:, :, np.newaxis]
     bokeh = img_bgr.astype(np.float32) * mask + blurred.astype(np.float32) * (1.0 - mask)
     return np.clip(bokeh, 0, 255).astype(np.uint8)
@@ -566,14 +622,14 @@ def apply_vignette(img_bgr, strength):
     if strength <= 0:
         return img_bgr
     rows, cols = img_bgr.shape[:2]
-    kernel_x = cv2.getGaussianKernel(cols, cols / 2)
-    kernel_y = cv2.getGaussianKernel(rows, rows / 2)
+    kernel_x = cv2.getGaussianKernel(cols, cols / 2.0)
+    kernel_y = cv2.getGaussianKernel(rows, rows / 2.0)
     mask = (kernel_y * kernel_x.T)
-    mask = 1 - strength * (1 - (mask / mask.max()))
-    vignette = np.empty_like(img_bgr)
-    for i in range(3):
-        vignette[:, :, i] = np.clip(img_bgr[:, :, i] * mask, 0, 255)
-    return vignette.astype(np.uint8)
+    mask_max = mask.max()
+    if mask_max > 0:
+        mask = 1.0 - strength * (1.0 - (mask / mask_max))
+    vignette = np.clip(img_bgr.astype(np.float32) * mask[:, :, np.newaxis], 0, 255).astype(np.uint8)
+    return vignette
 
 def adjust_shadows_highlights(img_bgr, shadow_lift, highlight_suppress):
     if shadow_lift == 0 and highlight_suppress == 0:
@@ -638,12 +694,16 @@ def process_full_studio(
 ):
     if input_img is None:
         return None
+
+    # 修正 EXIF 拍攝方向 (避免手機直拍橫向問題)
+    input_img = ImageOps.exif_transpose(input_img)
+
     # 🌟 雲端極速優化：將超大手機相片等比例縮放至最高 1600px，大幅提升運算速度
     max_dimension = 1600
     w_orig, h_orig = input_img.size
     if max(w_orig, h_orig) > max_dimension:
         scale = max_dimension / max(w_orig, h_orig)
-        new_w, new_h = int(w_orig * scale), int(h_orig * scale)
+        new_w, new_h = max(1, int(w_orig * scale)), max(1, int(h_orig * scale))
         input_img = input_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
     img_bgr = cv2.cvtColor(np.array(input_img.convert("RGB")), cv2.COLOR_RGB2BGR)
@@ -656,6 +716,9 @@ def process_full_studio(
         img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
     if flip_choice:
         img_bgr = cv2.flip(img_bgr, 1)
+
+    # 與旋轉/鏡像同步的基礎底圖，確保去背遮罩與背景合成維度完全一致
+    base_pil = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
 
     img_bgr = render_art_style(img_bgr, art_style_choice, art_blend_val, line_strength_val, cel_shading_val)
 
@@ -714,7 +777,7 @@ def process_full_studio(
     if sharpness_val != 1.0:
         img_pil = ImageEnhance.Sharpness(img_pil).enhance(sharpness_val)
 
-    final_output = apply_background_matting(img_pil, input_img, bg_mode_choice, bg_feather_val)
+    final_output = apply_background_matting(img_pil, base_pil, bg_mode_choice, bg_feather_val)
     return final_output
 
 def export_file_on_demand(current_img, file_format):
@@ -722,13 +785,24 @@ def export_file_on_demand(current_img, file_format):
         gr.Warning("⚠️ 尚未有任何精修成果可供下載！")
         return None
         
+    if isinstance(current_img, str):
+        current_img = Image.open(current_img)
+    elif isinstance(current_img, np.ndarray):
+        current_img = Image.fromarray(current_img)
+
     timestamp = int(time.time())
-    if getattr(current_img, "mode", "RGB") == "RGBA" or file_format.lower() == "png":
+    if file_format.lower() == "png":
         save_path = str(OUTPUT_DIR / f"enhanced_{timestamp}.png")
         current_img.save(save_path, format="PNG")
     else:
         save_path = str(OUTPUT_DIR / f"enhanced_{timestamp}.jpg")
-        current_img.convert("RGB").save(save_path, format="JPEG", quality=95)
+        if getattr(current_img, "mode", "RGB") == "RGBA":
+            # 去背透明圖片匯出 JPG 時，以乾淨白底貼合，避免產生全黑背景
+            bg_white = Image.new("RGB", current_img.size, (255, 255, 255))
+            bg_white.paste(current_img, mask=current_img.split()[3])
+            bg_white.save(save_path, format="JPEG", quality=95)
+        else:
+            current_img.convert("RGB").save(save_path, format="JPEG", quality=95)
     
     return gr.update(value=save_path, visible=True)
 
@@ -738,11 +812,12 @@ def on_batch_files_uploaded(file_list):
     
     gallery_items = []
     for idx, f in enumerate(file_list):
-        f_path = f.name if hasattr(f, "name") else str(f)
-        gallery_items.append((f_path, f"第 {idx+1} 張: {Path(f_path).name}"))
+        f_path = get_file_path(f)
+        f_name = get_file_name(f, f_path)
+        gallery_items.append((f_path, f"第 {idx+1} 張: {f_name}"))
         
     first_path = gallery_items[0][0]
-    first_pil = Image.open(first_path).convert("RGB")
+    first_pil = ImageOps.exif_transpose(Image.open(first_path).convert("RGB"))
     
     status_msg = f"📂 已成功載入 {len(file_list)} 張照片。已載入第 1 張為預覽範本，可點擊下方縮圖切換！"
     return first_pil, first_pil, gallery_items, status_msg, gr.update(visible=False)
@@ -752,15 +827,21 @@ def on_gallery_select(evt: gr.SelectData, file_list, *current_params):
         return gr.update(), gr.update(), "無可選取的圖片"
     
     idx = evt.index
+    if isinstance(idx, (list, tuple)):
+        idx = idx[0]
+    if not isinstance(idx, int) or idx < 0 or idx >= len(file_list):
+        return gr.update(), gr.update(), "選取的圖片索引無效"
+
     selected_file = file_list[idx]
-    selected_path = selected_file.name if hasattr(selected_file, "name") else str(selected_file)
-    selected_pil = Image.open(selected_path).convert("RGB")
+    selected_path = get_file_path(selected_file)
+    selected_name = get_file_name(selected_file, selected_path)
+    selected_pil = ImageOps.exif_transpose(Image.open(selected_path).convert("RGB"))
     
     preview_res = process_full_studio(selected_pil, *current_params)
-    status_msg = f"🎯 已切換範本為第 {idx+1} 張 ({Path(selected_path).name})！"
+    status_msg = f"🎯 已切換範本為第 {idx+1} 張 ({selected_name})！"
     return selected_pil, preview_res, status_msg
 
-def run_batch_export(file_list, *current_params):
+def run_batch_export(file_list, progress=gr.Progress(), *current_params):
     if not file_list or len(file_list) == 0:
         gr.Warning("⚠️ 尚未上傳任何圖片！")
         return gr.update(visible=False), "請先上傳圖片！"
@@ -773,14 +854,15 @@ def run_batch_export(file_list, *current_params):
     processed_count = 0
     
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for idx, file_obj in enumerate(file_list):
+        for idx, file_obj in enumerate(progress.tqdm(file_list, desc="批次修圖處理中")):
             try:
-                src_path = file_obj.name if hasattr(file_obj, "name") else str(file_obj)
-                orig_pil = Image.open(src_path).convert("RGB")
+                src_path = get_file_path(file_obj)
+                orig_name = get_file_name(file_obj, src_path)
+                orig_pil = ImageOps.exif_transpose(Image.open(src_path).convert("RGB"))
                 
                 res_pil = process_full_studio(orig_pil, *current_params)
                 
-                stem = Path(src_path).stem
+                stem = Path(orig_name).stem
                 if getattr(res_pil, "mode", "RGB") == "RGBA":
                     out_ext = ".png"
                     img_bytes = io.BytesIO()
@@ -946,7 +1028,7 @@ CUSTOM_CSS = """
 }
 """
 
-with gr.Blocks(title="自然人像與藝術修圖工作站", css=CUSTOM_CSS) as interface:
+with gr.Blocks(title="自然人像與藝術修圖工作站") as interface:
     gr.Markdown("## 📷 自然人像與藝術風格修圖工作站 (旗艦全能終極版)")
     gr.Markdown("純記憶體極速運算，無多餘暫存檔。支援 **單圖精修** 與 **點選縮圖切換範本批次打包** 模式。")
 
@@ -1123,11 +1205,23 @@ with gr.Blocks(title="自然人像與藝術修圖工作站", css=CUSTOM_CSS) as 
     all_controls_full = all_param_controls + [rotation_dropdown, flip_checkbox]
     preset_outputs = all_param_controls + [img_output, batch_sample_output]
 
-    # 單圖上傳事件 (上傳後維持原圖)
+    # 單圖上傳事件 (上傳後維持原圖並自動校正 EXIF 拍攝方向)
+    def handle_single_upload(img):
+        if img is None:
+            return None, gr.update(value=DEFAULTS["bg_mode"])
+        img = ImageOps.exif_transpose(img)
+        return img, gr.update(value=DEFAULTS["bg_mode"])
+
     img_input.upload(
-        fn=lambda img: (img, gr.update(value=DEFAULTS["bg_mode"])),
+        fn=handle_single_upload,
         inputs=[img_input],
         outputs=[img_output, bg_dropdown]
+    )
+
+    # 單圖清空事件
+    img_input.clear(
+        fn=lambda: (None, gr.update(value=None, visible=False)),
+        outputs=[img_output, file_download]
     )
 
     # 一鍵風格按鈕綁定 (全面雙向響應)
@@ -1152,6 +1246,12 @@ with gr.Blocks(title="自然人像與藝術修圖工作站", css=CUSTOM_CSS) as 
     batch_inputs.upload(
         fn=on_batch_files_uploaded,
         inputs=[batch_inputs],
+        outputs=[batch_sample_input, batch_sample_output, batch_gallery, batch_status, batch_download]
+    )
+
+    # 批次清空事件
+    batch_inputs.clear(
+        fn=lambda: (None, None, [], "等待上傳圖片中...", gr.update(visible=False)),
         outputs=[batch_sample_input, batch_sample_output, batch_gallery, batch_status, batch_download]
     )
 
@@ -1182,5 +1282,6 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=port,
         theme=gr.themes.Soft(),
+        css=CUSTOM_CSS,
         allowed_paths=[str(OUTPUT_DIR)]
     )
