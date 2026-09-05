@@ -219,18 +219,18 @@ PRESETS = {
     "🌸 膠原蛋白裸妝": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.15, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.0,
-        "blush": 0.08, "glow": 0.10, "bokeh": 0.0, "shadow": 0.05, "highlight": 0.05,
-        "brightness": 1.03, "contrast": 1.01, "saturation": 1.02, "sharpness": 1.02,
-        "temp": 0.02, "grain": 0.0, "vignette": 0.0, "filter": "經典無濾鏡"
+        "smooth": 0.18, "matte": 0.0, "detail": 0.03, "eye_clarity": 0.12, "teeth_white": 0.05,
+        "blush": 0.10, "glow": 0.15, "bokeh": 0.0, "shadow": 0.05, "highlight": 0.05,
+        "brightness": 1.04, "contrast": 1.01, "saturation": 1.02, "sharpness": 1.02,
+        "temp": 0.01, "grain": 0.0, "vignette": 0.0, "filter": "經典無濾鏡"
     },
     "☀️ 自然暖色調": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.15, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.05,
-        "blush": 0.10, "glow": 0.08, "bokeh": 0.0, "shadow": 0.05, "highlight": 0.05,
-        "brightness": 1.03, "contrast": 1.02, "saturation": 1.05, "sharpness": 1.02,
-        "temp": 0.18, "grain": 0.0, "vignette": 0.05, "filter": "經典無濾鏡"
+        "smooth": 0.12, "matte": 0.05, "detail": 0.08, "eye_clarity": 0.10, "teeth_white": 0.08,
+        "blush": 0.08, "glow": 0.06, "bokeh": 0.0, "shadow": 0.05, "highlight": 0.05,
+        "brightness": 1.03, "contrast": 1.03, "saturation": 1.05, "sharpness": 1.04,
+        "temp": 0.14, "grain": 0.0, "vignette": 0.05, "filter": "經典無濾鏡"
     },
     "☁️ 柔和對比": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -243,10 +243,10 @@ PRESETS = {
     "🌟 雜誌高訂啞光": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.20, "matte": 0.30, "detail": 0.10, "eye_clarity": 0.20, "teeth_white": 0.20,
-        "blush": 0.05, "glow": 0.0, "bokeh": 0.10, "shadow": 0.05, "highlight": 0.15,
-        "brightness": 1.01, "contrast": 1.05, "saturation": 0.98, "sharpness": 1.10,
-        "temp": 0.0, "grain": 0.05, "vignette": 0.10, "filter": "經典無濾鏡"
+        "smooth": 0.10, "matte": 0.35, "detail": 0.18, "eye_clarity": 0.22, "teeth_white": 0.20,
+        "blush": 0.05, "glow": 0.0, "bokeh": 0.08, "shadow": 0.05, "highlight": 0.18,
+        "brightness": 1.01, "contrast": 1.08, "saturation": 0.96, "sharpness": 1.20,
+        "temp": 0.0, "grain": 0.08, "vignette": 0.12, "filter": "經典無濾鏡"
     },
     "✨ 韓系清透冷白": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -262,23 +262,23 @@ PRESETS = {
         "smooth": 0.15, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.10,
         "blush": 0.05, "glow": 0.10, "bokeh": 0.05, "shadow": 0.10, "highlight": 0.05,
         "brightness": 1.04, "contrast": 0.98, "saturation": 0.95, "sharpness": 1.02,
-        "temp": -0.08, "grain": 0.0, "vignette": 0.0, "filter": "🎞️ 富士正片膠卷 (Fuji Film)"
+        "temp": -0.05, "grain": 0.0, "vignette": 0.0, "filter": "🎞️ 富士正片膠卷 (Fuji Film)"
     },
     "☕ 復古法式暖咖": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.15, "matte": 0.05, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.10,
-        "blush": 0.12, "glow": 0.10, "bokeh": 0.05, "shadow": 0.05, "highlight": 0.10,
-        "brightness": 0.99, "contrast": 1.04, "saturation": 0.98, "sharpness": 1.05,
-        "temp": 0.20, "grain": 0.15, "vignette": 0.25, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
+        "smooth": 0.15, "matte": 0.10, "detail": 0.08, "eye_clarity": 0.10, "teeth_white": 0.10,
+        "blush": 0.08, "glow": 0.08, "bokeh": 0.05, "shadow": 0.05, "highlight": 0.10,
+        "brightness": 1.00, "contrast": 1.06, "saturation": 0.92, "sharpness": 1.08,
+        "temp": 0.08, "grain": 0.15, "vignette": 0.22, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
     },
     "🧸 復古微醺暖調": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.15, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.10,
-        "blush": 0.15, "glow": 0.10, "bokeh": 0.05, "shadow": 0.05, "highlight": 0.10,
-        "brightness": 0.99, "contrast": 1.02, "saturation": 1.02, "sharpness": 1.05,
-        "temp": 0.15, "grain": 0.10, "vignette": 0.15, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
+        "smooth": 0.18, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.12, "teeth_white": 0.10,
+        "blush": 0.28, "glow": 0.16, "bokeh": 0.08, "shadow": 0.05, "highlight": 0.08,
+        "brightness": 1.02, "contrast": 1.02, "saturation": 1.04, "sharpness": 1.02,
+        "temp": 0.06, "grain": 0.08, "vignette": 0.12, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
     },
     "🍷 復古法式紅酒": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -286,7 +286,7 @@ PRESETS = {
         "smooth": 0.15, "matte": 0.10, "detail": 0.10, "eye_clarity": 0.15, "teeth_white": 0.15,
         "blush": 0.20, "glow": 0.10, "bokeh": 0.10, "shadow": 0.05, "highlight": 0.10,
         "brightness": 0.98, "contrast": 1.08, "saturation": 1.05, "sharpness": 1.08,
-        "temp": 0.12, "grain": 0.10, "vignette": 0.25, "filter": "🍷 法式紅酒 (Bordeaux Mood)"
+        "temp": 0.08, "grain": 0.10, "vignette": 0.25, "filter": "🍷 法式紅酒 (Bordeaux Mood)"
     },
     "🏙️ 俐落冷萃都會": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -300,9 +300,9 @@ PRESETS = {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
         "smooth": 0.15, "matte": 0.10, "detail": 0.15, "eye_clarity": 0.25, "teeth_white": 0.25,
-        "blush": 0.05, "glow": 0.05, "bokeh": 0.10, "shadow": 0.10, "highlight": 0.10,
-        "brightness": 1.03, "contrast": 1.05, "saturation": 0.88, "sharpness": 1.15,
-        "temp": -0.25, "grain": 0.05, "vignette": 0.10, "filter": "🌊 冷萃青藍 (Nordic Cool)"
+        "blush": 0.08, "glow": 0.06, "bokeh": 0.10, "shadow": 0.10, "highlight": 0.15,
+        "brightness": 1.04, "contrast": 1.05, "saturation": 0.90, "sharpness": 1.15,
+        "temp": -0.10, "grain": 0.05, "vignette": 0.10, "filter": "🌊 冷萃青藍 (Nordic Cool)"
     },
     "🎬 電影青橙色調": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -310,7 +310,7 @@ PRESETS = {
         "smooth": 0.10, "matte": 0.0, "detail": 0.10, "eye_clarity": 0.15, "teeth_white": 0.15,
         "blush": 0.10, "glow": 0.0, "bokeh": 0.10, "shadow": 0.05, "highlight": 0.10,
         "brightness": 1.00, "contrast": 1.08, "saturation": 1.05, "sharpness": 1.10,
-        "temp": 0.05, "grain": 0.10, "vignette": 0.15, "filter": "🎬 電影青橙 (Teal & Orange)"
+        "temp": 0.03, "grain": 0.10, "vignette": 0.15, "filter": "🎬 電影青橙 (Teal & Orange)"
     },
     "🖤 黑白經典紀實": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -323,9 +323,9 @@ PRESETS = {
     "💡 逆光人像救援": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "原圖無藝術濾鏡", "art_blend": 1.0, "line_strength": 0.5, "cel_shading": 0.5,
-        "smooth": 0.10, "matte": 0.0, "detail": 0.05, "eye_clarity": 0.10, "teeth_white": 0.10,
-        "blush": 0.05, "glow": 0.0, "bokeh": 0.0, "shadow": 0.25, "highlight": 0.20,
-        "brightness": 1.02, "contrast": 1.01, "saturation": 1.02, "sharpness": 1.05,
+        "smooth": 0.10, "matte": 0.0, "detail": 0.20, "eye_clarity": 0.15, "teeth_white": 0.10,
+        "blush": 0.08, "glow": 0.05, "bokeh": 0.0, "shadow": 0.45, "highlight": 0.25,
+        "brightness": 1.06, "contrast": 1.03, "saturation": 1.03, "sharpness": 1.08,
         "temp": 0.02, "grain": 0.0, "vignette": 0.0, "filter": "經典無濾鏡"
     },
     "🎨 經典卡通風 (Cartoon)": {
@@ -350,7 +350,7 @@ PRESETS = {
         "smooth": 0.05, "matte": 0.0, "detail": 0.10, "eye_clarity": 0.10, "teeth_white": 0.0,
         "blush": 0.10, "glow": 0.05, "bokeh": 0.05, "shadow": 0.05, "highlight": 0.10,
         "brightness": 1.00, "contrast": 1.08, "saturation": 1.20, "sharpness": 1.10,
-        "temp": 0.10, "grain": 0.10, "vignette": 0.15, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
+        "temp": 0.08, "grain": 0.10, "vignette": 0.15, "filter": "🌅 柯達金感暖調 (Kodak Gold)"
     },
     "🎨 夢幻水彩畫 (Watercolor)": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
@@ -363,7 +363,7 @@ PRESETS = {
     "🏮 單色墨水渲染 (Ink Wash Sketch)": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "🏮 單色墨水渲染 (Ink Wash Sketch)", "art_blend": 0.95, "line_strength": 0.65, "cel_shading": 0.70,
-        "smooth": 0.05, "matte": 0.0, "detail": 0.15, "eye_clarity": 0.20, "teeth_white": 0.0,
+        "smooth": 0.0, "matte": 0.0, "detail": 0.15, "eye_clarity": 0.0, "teeth_white": 0.0,
         "blush": 0.0, "glow": 0.0, "bokeh": 0.0, "shadow": 0.05, "highlight": 0.05,
         "brightness": 1.02, "contrast": 1.12, "saturation": 0.0, "sharpness": 1.15,
         "temp": 0.0, "grain": 0.10, "vignette": 0.15, "filter": "經典無濾鏡"
@@ -390,11 +390,11 @@ PRESETS = {
         "smooth": 0.10, "matte": 0.0, "detail": 0.25, "eye_clarity": 0.30, "teeth_white": 0.0,
         "blush": 0.0, "glow": 0.20, "bokeh": 0.10, "shadow": 0.15, "highlight": 0.15,
         "brightness": 1.02, "contrast": 1.20, "saturation": 1.30, "sharpness": 1.25,
-        "temp": -0.20, "grain": 0.15, "vignette": 0.25, "filter": "🎬 電影青橙 (Teal & Orange)"
+        "temp": -0.20, "grain": 0.15, "vignette": 0.25, "filter": "經典無濾鏡"
     },
     "👾 復古像素藝術 (Pixel Art)": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
-        "art_style": "👾 復古像素藝術 (Pixel Art)", "art_blend": 1.0, "line_strength": 0.50, "cel_shading": 0.50,
+        "art_style": "👾 復古像素藝術 (Pixel Art)", "art_blend": 1.0, "line_strength": 0.0, "cel_shading": 0.0,
         "smooth": 0.0, "matte": 0.0, "detail": 0.0, "eye_clarity": 0.0, "teeth_white": 0.0,
         "blush": 0.0, "glow": 0.0, "bokeh": 0.0, "shadow": 0.0, "highlight": 0.0,
         "brightness": 1.05, "contrast": 1.15, "saturation": 1.20, "sharpness": 1.00,
@@ -403,7 +403,7 @@ PRESETS = {
     "🎨 普普藝術風 (Pop Art)": {
         "bg_mode": "保留原圖背景", "bg_feather": 0.5,
         "art_style": "🎨 普普藝術風 (Pop Art)", "art_blend": 0.90, "line_strength": 0.65, "cel_shading": 0.75,
-        "smooth": 0.0, "matte": 0.0, "detail": 0.15, "eye_clarity": 0.10, "teeth_white": 0.0,
+        "smooth": 0.0, "matte": 0.0, "detail": 0.15, "eye_clarity": 0.0, "teeth_white": 0.0,
         "blush": 0.0, "glow": 0.0, "bokeh": 0.0, "shadow": 0.0, "highlight": 0.0,
         "brightness": 1.08, "contrast": 1.25, "saturation": 1.40, "sharpness": 1.15,
         "temp": 0.05, "grain": 0.05, "vignette": 0.0, "filter": "經典無濾鏡"
@@ -636,12 +636,12 @@ def adjust_shadows_highlights(img_bgr, shadow_lift, highlight_suppress):
         return img_bgr
     img_float = img_bgr.astype(np.float32) / 255.0
     gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-    shadow_mask = np.clip(1.0 - (gray / 0.4), 0, 1)[:, :, np.newaxis]
-    highlight_mask = np.clip((gray - 0.6) / 0.4, 0, 1)[:, :, np.newaxis]
+    shadow_mask = np.clip(1.0 - (gray / 0.45), 0, 1)[:, :, np.newaxis]
+    highlight_mask = np.clip((gray - 0.55) / 0.45, 0, 1)[:, :, np.newaxis]
     if shadow_lift > 0:
-        img_float += shadow_mask * shadow_lift * 0.15
+        img_float += shadow_mask * shadow_lift * 0.25
     if highlight_suppress > 0:
-        img_float -= highlight_mask * highlight_suppress * 0.15
+        img_float -= highlight_mask * highlight_suppress * 0.20
     return np.clip(img_float * 255.0, 0, 255).astype(np.uint8)
 
 def apply_film_filter(img_bgr, filter_type):
